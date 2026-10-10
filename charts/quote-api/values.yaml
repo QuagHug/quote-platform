@@ -1,7 +1,7 @@
 image:
-  repository: ghcr.io/quaghug/quote-api
+  repository: "ghcr.io/quaghug/quote-api"
   # Full git SHA of the commit that built the image. CI rewrites this line.
-  tag: "local"
+  tag: "3eb20dd9f83b6ef232f138460ffe5d49fe7ef35b"
   pullPolicy: IfNotPresent
 
 # Used only when autoscaling is disabled. With the HPA on, the chart leaves

@@ -11,7 +11,7 @@
 name: quote-platform
 
 x-toolbox: &toolbox
-  image: ghcr.io/quaghug/quote-toolbox:${TOOLBOX_TAG:-local}
+  image: ghcr.io/quaghug/quote-toolbox:${TOOLBOX_TAG:-3eb20dd9f83b6ef232f138460ffe5d49fe7ef35b}
   environment:
     IN_TOOLBOX: "1"
     KUBECONFIG: /kube/config
