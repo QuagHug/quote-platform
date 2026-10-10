@@ -1,7 +1,4 @@
 #!/usr/bin/env sh
-# Spot reclaim drill: drain one spot node while a curl loop hits the Ingress,
-# show the pods rescheduling, then uncordon. Fails if more than 1% of
-# requests fail or the on-demand replica is lost.
 . "$(dirname "$0")/_lib.sh"
 
 NS=quote-api
@@ -18,7 +15,6 @@ where() {
 
 kubectl -n "$NS" rollout status deployment/quote-api --timeout=120s >/dev/null
 
-# Drain the spot node that currently runs a quote-api pod.
 SPOT=""
 for n in $(kubectl get nodes -l acme.io/capacity=spot -o jsonpath='{.items[*].metadata.name}'); do
   if kubectl -n "$NS" get pods -l app.kubernetes.io/name=quote-api --field-selector "spec.nodeName=$n" --no-headers 2>/dev/null | grep -q .; then

@@ -32,15 +32,13 @@ spec:
           type: RuntimeDefault
       affinity:
         nodeAffinity:
-          # Hard: only the spot and on-demand pools. Keeps pods off the GPU node
-          # and off the k3s server, which is schedulable but has no pool label.
+          # Spot and on-demand pools only, which excludes the GPU node and the unlabeled k3s server.
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: {{ .Values.placement.capacityLabel }}
                     operator: In
                     values: {{ toJson .Values.placement.allowedCapacities }}
-          # Soft: prefer spot for cost.
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -49,8 +47,7 @@ spec:
                     operator: In
                     values: [{{ .Values.placement.preferredCapacity | quote }}]
       topologySpreadConstraints:
-        # Hard spread across pools: guarantees an on-demand replica.
-        # nodeTaintsPolicy Honor: a drained (cordoned) node stops counting as a domain.
+        # Hard pool spread forces an on-demand replica; Honor leaves cordoned nodes out of the skew count.
         - topologyKey: {{ .Values.placement.capacityLabel }}
           maxSkew: {{ .Values.placement.poolMaxSkew }}
           whenUnsatisfiable: DoNotSchedule
@@ -59,7 +56,6 @@ spec:
           labelSelector:
             matchLabels:
               {{- include "quote-api.selectorLabels" . | nindent 14 }}
-        # Soft spread across nodes, so rescheduling still works when a node vanishes.
         - topologyKey: kubernetes.io/hostname
           maxSkew: 1
           whenUnsatisfiable: ScheduleAnyway

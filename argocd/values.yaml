@@ -1,4 +1,3 @@
-# Argo CD for a laptop: only what GitOps for one Helm chart needs.
 dex:
   enabled: false
 notifications:
@@ -7,9 +6,9 @@ applicationSet:
   replicas: 0
 configs:
   params:
-    server.insecure: true          # plain HTTP behind kubectl port-forward, local only
+    server.insecure: true  # local port-forward only
   cm:
-    timeout.reconciliation: 60s    # poll Git every minute so CI tag bumps land fast
+    timeout.reconciliation: 60s
     users.anonymous.enabled: "true"
   rbac:
-    policy.default: role:readonly  # anonymous visitors can look, not change
+    policy.default: role:readonly

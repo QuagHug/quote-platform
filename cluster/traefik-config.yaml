@@ -1,5 +1,4 @@
-# k3s ships Traefik as a single replica. Pin it to the server node so the
-# ingress never sits on a spot node that the reclaim drill drains.
+# Single replica: keep it off the spot nodes the reclaim drill drains.
 apiVersion: helm.cattle.io/v1
 kind: HelmChartConfig
 metadata:

@@ -10,7 +10,6 @@ spec:
     - name: quote-api
       rules:
         - alert: QuoteApiLatencyHigh
-          # Threshold comes from the measured baseline, see LOADTEST.md.
           expr: |
             histogram_quantile(0.95,
               sum by (le) (rate(quote_api_request_duration_seconds_bucket{route="/api/quote"}[2m]))

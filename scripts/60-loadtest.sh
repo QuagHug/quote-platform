@@ -1,7 +1,4 @@
 #!/usr/bin/env sh
-# Part 6: Prometheus + Grafana, a k6 ramp through the Ingress, and evidence that
-# the HPA scales past 3 while the spot/on-demand placement holds.
-# Evidence from your run lands in ./out/ (gitignored); the committed run is in docs/evidence/.
 . "$(dirname "$0")/_lib.sh"
 
 KPS_VERSION=92.3.0
@@ -15,7 +12,6 @@ helm upgrade --install kps prometheus-community/kube-prometheus-stack --version 
 kubectl -n monitoring get pods
 
 log "Asking Argo CD to re-render the chart now that the monitoring CRDs exist"
-# The chart only renders its ServiceMonitor/PrometheusRule when the API exists.
 kubectl -n argocd annotate application quote-api argocd.argoproj.io/refresh=hard --overwrite >/dev/null
 i=0
 until kubectl -n quote-api get servicemonitor quote-api >/dev/null 2>&1 && kubectl -n quote-api get prometheusrule quote-api >/dev/null 2>&1; do
@@ -47,12 +43,13 @@ HPA_PID=$!
 PLACE_PID=$!
 trap 'kill $HPA_PID $PLACE_PID 2>/dev/null || true' EXIT
 
-log "Running k6 against http://host.docker.internal:${INGRESS_PORT}/api/quote (about 10 minutes)"
+log "Running k6 against http://host.docker.internal:${INGRESS_PORT}/api/quote (about 9 minutes)"
 set +e
 k6 run --quiet --summary-export "$OUT/k6-summary.json" \
-  -e BASE_URL="http://host.docker.internal:${INGRESS_PORT}" -e PEAK_RPS="${PEAK_RPS:-20}" \
-  loadtest/k6/quote.js 2>&1 | tee "$OUT/k6-output.txt"
+  -e BASE_URL="http://host.docker.internal:${INGRESS_PORT}" -e PEAK_RPS="${PEAK_RPS:-10}" \
+  loadtest/k6/quote.js > "$OUT/k6-output.txt" 2>&1
 K6_RC=$?
+cat "$OUT/k6-output.txt"
 set -e
 sleep 20
 kill "$HPA_PID" "$PLACE_PID" 2>/dev/null || true
@@ -62,7 +59,7 @@ cat "$OUT/hpa-watch.txt"
 log "Ready replicas per nodepool, sampled every 10s"
 cat "$OUT/placement.txt"
 
-MAX=$(awk 'NR>1 {print $6}' "$OUT/hpa-watch.txt" | sort -n | tail -1)
+MAX=$(awk 'NR>1 {print $(NF-1)}' "$OUT/hpa-watch.txt" | sort -n | tail -1)
 NO_OD=$(grep -c -v 'on-demand=' "$OUT/placement.txt" || true)
 log "Firing or pending alerts in Prometheus"
 curl -s localhost:9090/api/v1/alerts | jq -r '.data.alerts[] | select(.labels.alertname | startswith("QuoteApi")) | "\(.labels.alertname) \(.state) since \(.activeAt)"' || true

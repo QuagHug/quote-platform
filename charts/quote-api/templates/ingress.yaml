@@ -1,6 +1,4 @@
 {{- if .Values.ingress.enabled }}
-# Path-only rule (no host), so `curl http://localhost:8080/api/quote` works as is.
-# /healthz and /metrics stay cluster-internal.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

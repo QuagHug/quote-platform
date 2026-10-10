@@ -1,9 +1,7 @@
 #!/usr/bin/env sh
-# Part 2: install Argo CD, register the quote-api Application (our Helm chart,
-# synced from GitHub), wait until it is Synced/Healthy and answering via Ingress.
 . "$(dirname "$0")/_lib.sh"
 
-ARGOCD_CHART_VERSION=10.10.2   # Argo CD v3.5.4
+ARGOCD_CHART_VERSION=10.10.2
 
 log "Installing Argo CD (argo-cd chart $ARGOCD_CHART_VERSION)"
 helm repo add argo https://argoproj.github.io/argo-helm --force-update >/dev/null

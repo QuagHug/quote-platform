@@ -1,0 +1,170 @@
+
+==> Installing kube-prometheus-stack 92.3.0 (Prometheus, Grafana, kube-state-metrics)
+NAME                                                 READY   STATUS    RESTARTS      AGE
+kps-grafana-78f87b64f5-xm7m7                         3/3     Running   0             46m
+kps-kube-prometheus-stack-operator-84c77fb9d-27zp2   1/1     Running   1 (64m ago)   81m
+kps-kube-state-metrics-5f78b5bcbb-vz75q              1/1     Running   0             81m
+prometheus-kps-kube-prometheus-stack-prometheus-0    2/2     Running   0             81m
+
+==> Asking Argo CD to re-render the chart now that the monitoring CRDs exist
+NAME                                             AGE
+servicemonitor.monitoring.coreos.com/quote-api   47m
+
+NAME                                             AGE
+prometheusrule.monitoring.coreos.com/quote-api   47m
+
+==> Grafana on http://localhost:3000 (dashboard: quote-api)
+
+==> Recording HPA and placement every 10s while k6 runs
+
+==> Running k6 against http://host.docker.internal:8080/api/quote (about 9 minutes)
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+
+    http_req_duration{phase:hold}
+    ✓ 'p(95)<1000' p(95)=254.98ms
+    ✓ 'p(99)<2500' p(99)=790.92ms
+
+    http_req_duration{phase:ramp}
+    ✓ 'p(95)<100000' p(95)=189.72ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 8398    15.550007/s
+    checks_succeeded...: 100.00% 8398 out of 8398
+    checks_failed......: 0.00%   0 out of 8398
+
+    ✓ status is 200
+    ✓ body has a quote
+
+    HTTP
+    http_req_duration..............: avg=134.08ms min=100.87ms med=107.44ms max=2.51s    p(90)=146.12ms p(95)=230.74ms
+      { expected_response:true }...: avg=134.08ms min=100.87ms med=107.44ms max=2.51s    p(90)=146.12ms p(95)=230.74ms
+      { phase:hold }...............: avg=137.94ms min=100.87ms med=105.91ms max=2.51s    p(90)=148.7ms  p(95)=254.98ms
+      { phase:ramp }...............: avg=124.4ms  min=101.91ms med=110.71ms max=605.35ms p(90)=142.93ms p(95)=189.72ms
+    http_req_failed................: 0.00%  0 out of 4199
+    http_reqs......................: 4199   7.775004/s
+
+    EXECUTION
+    iteration_duration.............: avg=134.68ms min=101.05ms med=107.81ms max=2.52s    p(90)=146.58ms p(95)=232.97ms
+    iterations.....................: 4199   7.775004/s
+    vus............................: 1      min=0         max=19 
+    vus_max........................: 100    min=100       max=100
+
+    NETWORK
+    data_received..................: 1.0 MB 1.9 kB/s
+    data_sent......................: 378 kB 700 B/s
+
+
+
+
+==> HPA during the run (replicas column)
+NAME        REFERENCE              TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+quote-api   Deployment/quote-api   cpu: 1%/60%   3         10        3          48m
+quote-api   Deployment/quote-api   cpu: 4%/60%   3         10        3          48m
+quote-api   Deployment/quote-api   cpu: 24%/60%   3         10        3          48m
+quote-api   Deployment/quote-api   cpu: 36%/60%   3         10        3          48m
+quote-api   Deployment/quote-api   cpu: 34%/60%   3         10        3          48m
+quote-api   Deployment/quote-api   cpu: 30%/60%   3         10        3          49m
+quote-api   Deployment/quote-api   cpu: 42%/60%   3         10        3          49m
+quote-api   Deployment/quote-api   cpu: 54%/60%   3         10        3          49m
+quote-api   Deployment/quote-api   cpu: 55%/60%   3         10        3          49m
+quote-api   Deployment/quote-api   cpu: 65%/60%   3         10        3          50m
+quote-api   Deployment/quote-api   cpu: 74%/60%   3         10        3          50m
+quote-api   Deployment/quote-api   cpu: 78%/60%   3         10        4          50m
+quote-api   Deployment/quote-api   cpu: 75%/60%   3         10        4          50m
+quote-api   Deployment/quote-api   cpu: 79%/60%   3         10        4          51m
+quote-api   Deployment/quote-api   cpu: 85%/60%   3         10        6          51m
+quote-api   Deployment/quote-api   cpu: 67%/60%   3         10        8          51m
+quote-api   Deployment/quote-api   cpu: 55%/60%   3         10        8          51m
+quote-api   Deployment/quote-api   cpu: 55%/60%   3         10        8          52m
+quote-api   Deployment/quote-api   cpu: 54%/60%   3         10        8          52m
+quote-api   Deployment/quote-api   cpu: 59%/60%   3         10        8          52m
+quote-api   Deployment/quote-api   cpu: 63%/60%   3         10        8          52m
+quote-api   Deployment/quote-api   cpu: 58%/60%   3         10        8          53m
+quote-api   Deployment/quote-api   cpu: 56%/60%   3         10        8          53m
+quote-api   Deployment/quote-api   cpu: 55%/60%   3         10        8          53m
+quote-api   Deployment/quote-api   cpu: 54%/60%   3         10        8          53m
+quote-api   Deployment/quote-api   cpu: 56%/60%   3         10        8          54m
+quote-api   Deployment/quote-api   cpu: 68%/60%   3         10        8          54m
+quote-api   Deployment/quote-api   cpu: 81%/60%   3         10        10         54m
+quote-api   Deployment/quote-api   cpu: 44%/60%   3         10        10         54m
+quote-api   Deployment/quote-api   cpu: 46%/60%   3         10        10         55m
+quote-api   Deployment/quote-api   cpu: 59%/60%   3         10        10         55m
+quote-api   Deployment/quote-api   cpu: 47%/60%   3         10        10         55m
+quote-api   Deployment/quote-api   cpu: 45%/60%   3         10        10         55m
+quote-api   Deployment/quote-api   cpu: 43%/60%   3         10        10         56m
+quote-api   Deployment/quote-api   cpu: 43%/60%   3         10        10         56m
+quote-api   Deployment/quote-api   cpu: 45%/60%   3         10        9          56m
+quote-api   Deployment/quote-api   cpu: 46%/60%   3         10        9          56m
+quote-api   Deployment/quote-api   cpu: 44%/60%   3         10        9          57m
+
+==> Ready replicas per nodepool, sampled every 10s
+19:17:53 on-demand=1 spot=2 
+19:18:04 on-demand=1 spot=2 
+19:18:14 on-demand=1 spot=2 
+19:18:24 on-demand=1 spot=2 
+19:18:35 on-demand=1 spot=2 
+19:18:45 on-demand=1 spot=2 
+19:18:55 on-demand=1 spot=2 
+19:19:05 on-demand=1 spot=2 
+19:19:16 on-demand=1 spot=2 
+19:19:26 on-demand=1 spot=2 
+19:19:36 on-demand=1 spot=2 
+19:19:47 on-demand=1 spot=2 
+19:19:57 on-demand=1 spot=2 
+19:20:07 on-demand=1 spot=2 
+19:20:17 on-demand=1 spot=2 
+19:20:28 on-demand=1 spot=3 
+19:20:38 on-demand=1 spot=3 
+19:20:48 on-demand=1 spot=3 
+19:20:59 on-demand=1 spot=3 
+19:21:09 on-demand=2 spot=4 
+19:21:19 on-demand=2 spot=4 
+19:21:31 on-demand=3 spot=5 
+19:21:41 on-demand=3 spot=5 
+19:21:52 on-demand=3 spot=5 
+19:22:02 on-demand=3 spot=5 
+19:22:13 on-demand=3 spot=5 
+19:22:24 on-demand=3 spot=5 
+19:22:34 on-demand=3 spot=5 
+19:22:45 on-demand=3 spot=5 
+19:22:55 on-demand=3 spot=5 
+19:23:06 on-demand=3 spot=5 
+19:23:16 on-demand=3 spot=5 
+19:23:27 on-demand=3 spot=5 
+19:23:37 on-demand=3 spot=5 
+19:23:48 on-demand=3 spot=5 
+19:23:59 on-demand=3 spot=5 
+19:24:09 on-demand=3 spot=5 
+19:24:23 on-demand=4 spot=6 
+19:24:34 on-demand=4 spot=6 
+19:24:44 on-demand=4 spot=6 
+19:24:55 on-demand=4 spot=6 
+19:25:05 on-demand=4 spot=6 
+19:25:16 on-demand=4 spot=6 
+19:25:27 on-demand=4 spot=6 
+19:25:37 on-demand=4 spot=6 
+19:25:48 on-demand=4 spot=6 
+19:25:59 on-demand=4 spot=6 
+19:26:09 on-demand=4 spot=6 
+19:26:20 on-demand=4 spot=6 
+19:26:31 on-demand=3 spot=6 
+19:26:41 on-demand=3 spot=6 
+19:26:52 on-demand=3 spot=6 
+19:27:02 on-demand=3 spot=6 
+19:27:13 on-demand=3 spot=6 
+
+==> Firing or pending alerts in Prometheus
+  max replicas observed: 10   samples without an on-demand replica: 0   k6 exit: 0
+
+==> PASS: scaled to 10 replicas, on-demand floor held, k6 thresholds met
+rc=0
