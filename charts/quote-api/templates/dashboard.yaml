@@ -1,0 +1,12 @@
+{{- if .Values.monitoring.dashboard }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "quote-api.name" . }}-dashboard
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  quote-api.json: |-
+{{ .Files.Get "dashboards/quote-api.json" | indent 4 }}
+{{- end }}

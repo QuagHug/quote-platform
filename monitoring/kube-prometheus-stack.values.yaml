@@ -1,0 +1,45 @@
+# kube-prometheus-stack trimmed for a laptop k3d cluster.
+alertmanager:
+  enabled: false        # rules still evaluate in Prometheus (see its /alerts page); no paging locally
+nodeExporter:
+  enabled: false        # needs host mounts Docker Desktop doesn't have; cAdvisor covers container CPU
+kubeEtcd:
+  enabled: false        # k3s embeds these; there is nothing separate to scrape
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # Pick up every ServiceMonitor / PrometheusRule, not only ones labeled release=<this chart>.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    retention: 12h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+
+kube-state-metrics:
+  # Exposes the nodepool label so dashboards can count replicas per pool.
+  metricLabelsAllowlist:
+    - nodes=[acme.io/capacity]
+
+grafana:
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Admin   # local lab only, so no password to hand out or commit
+    auth:
+      disable_login_form: true
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL

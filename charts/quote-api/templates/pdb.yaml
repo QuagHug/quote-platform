@@ -1,0 +1,14 @@
+# maxUnavailable 1: a drain evicts one pod at a time and waits for its
+# replacement. minAvailable 3 would block a drain forever at 3 replicas.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "quote-api.name" . }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      {{- include "quote-api.selectorLabels" . | nindent 6 }}

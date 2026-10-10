@@ -1,0 +1,55 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: gpu-on-demand
+spec:
+  weight: 10
+  template:
+    metadata:
+      labels:
+        workload-type: gpu-inference
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: gpu
+      requirements:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        - key: kubernetes.io/os
+          operator: In
+          values: ["linux"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["g"]
+        - key: karpenter.k8s.aws/instance-family
+          operator: In
+          values: ["g5", "g6", "g6e"]
+        - key: karpenter.k8s.aws/instance-gpu-manufacturer
+          operator: In
+          values: ["nvidia"]
+        - key: karpenter.k8s.aws/instance-gpu-count
+          operator: Lt
+          values: ["5"]
+      taints:
+        - key: nvidia.com/gpu
+          effect: NoSchedule
+      expireAfter: 720h
+      terminationGracePeriod: 1h
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 5m
+    budgets:
+      - nodes: "1"
+      - nodes: "0"
+        reasons: ["Drifted"]
+        schedule: "0 8 * * 1-5"
+        duration: 10h
+  limits:
+    nvidia.com/gpu: "8"
+    cpu: "128"
+    memory: 512Gi

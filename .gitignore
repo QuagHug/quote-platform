@@ -1,0 +1,4 @@
+out/
+.terraform/
+*.tfstate*
+.DS_Store

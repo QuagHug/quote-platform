@@ -1,0 +1,51 @@
+# One command, whole lab:  docker compose up -d
+#
+#   cluster  one-shot: creates (or restarts) a k3d cluster - 1 server + 4 agents,
+#            each node is a container - then labels/taints the nodes with
+#            troubleshoot/prepare.sh. `up -d` waits for it to finish.
+#   toolbox  long-running: kubectl, helm, terraform, k6, k3d. Every script in
+#            ./scripts re-runs itself in here, so nothing is needed on the host.
+#
+# k3d creates the node containers through the host Docker socket, so they live
+# next to (not inside) this compose project. `./scripts/down.sh` removes them.
+name: quote-platform
+
+x-toolbox: &toolbox
+  image: ghcr.io/quaghug/quote-toolbox:${TOOLBOX_TAG:-local}
+  environment:
+    IN_TOOLBOX: "1"
+    KUBECONFIG: /kube/config
+    CLUSTER_NAME: ${CLUSTER_NAME:-quote}
+    INGRESS_PORT: ${INGRESS_PORT:-8080}
+    API_PORT: ${API_PORT:-6550}
+    GRAFANA_PORT: ${GRAFANA_PORT:-3000}
+    ARGOCD_PORT: ${ARGOCD_PORT:-8081}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    - ./:/workspace
+    - kube:/kube
+    - /var/run/docker.sock:/var/run/docker.sock
+
+services:
+  cluster:
+    <<: *toolbox
+    # Pulls the published toolbox image, or builds it locally if the pull fails.
+    build: ./toolbox
+    command: ["sh", "/workspace/scripts/00-bootstrap.sh"]
+    restart: "no"
+
+  toolbox:
+    <<: *toolbox
+    pull_policy: never   # same image the cluster service just pulled or built
+    command: ["sleep", "infinity"]
+    init: true
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+      - "${ARGOCD_PORT:-8081}:8081"
+    depends_on:
+      cluster:
+        condition: service_completed_successfully
+
+volumes:
+  kube: {}

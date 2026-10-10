@@ -1,0 +1,22 @@
+{{- if .Values.ingress.enabled }}
+# Path-only rule (no host), so `curl http://localhost:8080/api/quote` works as is.
+# /healthz and /metrics stay cluster-internal.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "quote-api.name" . }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - http:
+        paths:
+          - path: {{ .Values.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "quote-api.name" . }}
+                port:
+                  name: http
+{{- end }}
