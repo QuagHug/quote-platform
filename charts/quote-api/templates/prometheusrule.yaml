@@ -1,0 +1,26 @@
+{{- if and .Values.monitoring.prometheusRule (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "quote-api.name" . }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: quote-api
+      rules:
+        - alert: QuoteApiLatencyHigh
+          # Threshold comes from the measured baseline, see LOADTEST.md.
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(quote_api_request_duration_seconds_bucket{route="/api/quote"}[2m]))
+            ) > {{ .Values.monitoring.latencyAlert.p95Seconds }}
+            and
+            sum(rate(quote_api_requests_total{route="/api/quote"}[2m])) > 0.5
+          for: {{ .Values.monitoring.latencyAlert.for }}
+          labels:
+            severity: warning
+          annotations:
+            summary: "quote-api p95 latency above {{ .Values.monitoring.latencyAlert.p95Seconds }}s"
+            description: "p95 of /api/quote is {{ "{{" }} $value | humanizeDuration {{ "}}" }} for {{ .Values.monitoring.latencyAlert.for }}. Pods are CPU-saturated faster than the HPA adds replicas, or the HPA is at maxReplicas."
+{{- end }}

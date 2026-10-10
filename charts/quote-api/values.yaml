@@ -1,0 +1,61 @@
+image:
+  repository: ghcr.io/quaghug/quote-api
+  # Full git SHA of the commit that built the image. CI rewrites this line.
+  tag: "local"
+  pullPolicy: IfNotPresent
+
+# Used only when autoscaling is disabled. With the HPA on, the chart leaves
+# spec.replicas out so ArgoCD and the HPA never fight over the count.
+replicaCount: 3
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  # Remove one pod per minute. The default HPA policy can drop 10 -> 3 in one
+  # step, and the ReplicaSet deletes from the busiest node first, which is the
+  # on-demand node under the pool spread below. Gradual scale-down keeps 1/1/1.
+  scaleDownPodsPerMinute: 1
+  scaleDownStabilizationSeconds: 60
+
+# Rounds of SHA-256 per /api/quote request. Empty = app default (~100ms on an M1 core).
+workRounds: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 32Mi
+  limits:
+    cpu: "1"
+    memory: 128Mi
+
+placement:
+  capacityLabel: acme.io/capacity
+  allowedCapacities: [spot, on-demand]
+  preferredCapacity: spot
+  # Hard spread across the two pools. With 3 replicas a 3-0 split has skew 3,
+  # so at least one replica must land on on-demand. 2 (not 1) keeps spot the
+  # majority when the HPA scales out (10 replicas -> 6 spot / 4 on-demand).
+  poolMaxSkew: 2
+
+pdb:
+  maxUnavailable: 1
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  className: traefik
+  path: /api
+
+monitoring:
+  # Rendered only once the Prometheus Operator CRDs exist (scripts/60-loadtest.sh).
+  serviceMonitor: true
+  prometheusRule: true
+  # Grafana's sidecar picks up ConfigMaps labeled grafana_dashboard=1.
+  dashboard: true
+  latencyAlert:
+    p95Seconds: 1
+    for: 3m
