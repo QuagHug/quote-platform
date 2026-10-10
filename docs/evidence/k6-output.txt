@@ -1,0 +1,47 @@
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+
+    http_req_duration{phase:hold}
+    ✓ 'p(95)<1000' p(95)=254.98ms
+    ✓ 'p(99)<2500' p(99)=790.92ms
+
+    http_req_duration{phase:ramp}
+    ✓ 'p(95)<100000' p(95)=189.72ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 8398    15.550007/s
+    checks_succeeded...: 100.00% 8398 out of 8398
+    checks_failed......: 0.00%   0 out of 8398
+
+    ✓ status is 200
+    ✓ body has a quote
+
+    HTTP
+    http_req_duration..............: avg=134.08ms min=100.87ms med=107.44ms max=2.51s    p(90)=146.12ms p(95)=230.74ms
+      { expected_response:true }...: avg=134.08ms min=100.87ms med=107.44ms max=2.51s    p(90)=146.12ms p(95)=230.74ms
+      { phase:hold }...............: avg=137.94ms min=100.87ms med=105.91ms max=2.51s    p(90)=148.7ms  p(95)=254.98ms
+      { phase:ramp }...............: avg=124.4ms  min=101.91ms med=110.71ms max=605.35ms p(90)=142.93ms p(95)=189.72ms
+    http_req_failed................: 0.00%  0 out of 4199
+    http_reqs......................: 4199   7.775004/s
+
+    EXECUTION
+    iteration_duration.............: avg=134.68ms min=101.05ms med=107.81ms max=2.52s    p(90)=146.58ms p(95)=232.97ms
+    iterations.....................: 4199   7.775004/s
+    vus............................: 1      min=0         max=19 
+    vus_max........................: 100    min=100       max=100
+
+    NETWORK
+    data_received..................: 1.0 MB 1.9 kB/s
+    data_sent......................: 378 kB 700 B/s
+
+
+

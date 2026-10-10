@@ -21,7 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// About 100ms of CPU on an Apple M1 core; override with QUOTE_WORK_ROUNDS.
+// SHA-256 rounds per /api/quote request, about 100ms of CPU on an Apple M1 core.
 const defaultWorkRounds = 1900000
 
 var quotes = [][2]string{
@@ -67,7 +67,6 @@ func instrument(route string, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// burnCPU is the simulated work: a chain of SHA-256 hashes the compiler cannot skip.
 func burnCPU(rounds int) [32]byte {
 	sum := sha256.Sum256([]byte("quote"))
 	for i := 0; i < rounds; i++ {

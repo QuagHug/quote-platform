@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# Shows the simulated nodepools: labels, taints and what runs where.
 . "$(dirname "$0")/_lib.sh"
 
 log "Nodes and their pool labels"

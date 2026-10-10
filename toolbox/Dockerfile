@@ -1,9 +1,7 @@
 # syntax=docker/dockerfile:1
-# Toolbox: every CLI the scripts need, so the reviewer installs nothing locally.
 FROM hashicorp/terraform:1.16.5 AS terraform
 FROM grafana/k6:2.3.0 AS k6
 
-# alpine/k8s ships kubectl, helm, jq, yq, kubeconform, curl, git.
 FROM alpine/k8s:1.36.5
 ARG TARGETARCH
 ARG K3D_VERSION=v5.9.0

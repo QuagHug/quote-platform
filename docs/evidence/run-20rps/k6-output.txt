@@ -1,0 +1,44 @@
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+
+    http_req_duration{expected_response:true}
+    ✗ 'p(95)<1500' p(95)=3.54s
+    ✗ 'p(99)<3000' p(99)=9.01s
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 15908   26.512845/s
+    checks_succeeded...: 100.00% 15908 out of 15908
+    checks_failed......: 0.00%   0 out of 15908
+
+    ✓ status is 200
+    ✓ body has a quote
+
+    HTTP
+    http_req_duration..............: avg=678.89ms min=102.22ms med=146.01ms max=14.33s p(90)=1.65s p(95)=3.54s
+      { expected_response:true }...: avg=678.89ms min=102.22ms med=146.01ms max=14.33s p(90)=1.65s p(95)=3.54s
+    http_req_failed................: 0.00%  0 out of 7954
+    http_reqs......................: 7954   13.256422/s
+
+    EXECUTION
+    dropped_iterations.............: 85     0.141664/s
+    iteration_duration.............: avg=680.48ms min=102.4ms  med=146.47ms max=14.33s p(90)=1.65s p(95)=3.54s
+    iterations.....................: 7954   13.256422/s
+    vus............................: 0      min=0         max=112
+    vus_max........................: 114    min=50        max=114
+
+    NETWORK
+    data_received..................: 2.0 MB 3.3 kB/s
+    data_sent......................: 716 kB 1.2 kB/s
+
+
+
+time="2026-10-10T18:42:06Z" level=error msg="thresholds on metrics 'http_req_duration{expected_response:true}' have been crossed"

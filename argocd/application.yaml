@@ -24,7 +24,6 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
-  # Belt and braces: the chart already omits spec.replicas when the HPA is on.
   ignoreDifferences:
     - group: apps
       kind: Deployment

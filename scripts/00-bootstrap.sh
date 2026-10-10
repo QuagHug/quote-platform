@@ -1,6 +1,4 @@
 #!/usr/bin/env sh
-# Runs automatically as the `cluster` service during `docker compose up -d`.
-# Safe to re-run: creates the cluster once, then only restarts/re-checks it.
 . "$(dirname "$0")/_lib.sh"
 
 K3S_IMAGE="rancher/k3s:v1.36.5-k3s1"

@@ -1,43 +1,32 @@
 # Migration notes: GitLab CI to GitHub Actions
 
-`.github/workflows/ci.yml` replaces `ci/legacy.gitlab-ci.yml`. I kept the old pipeline's intent (test, scan, build, deploy) and dropped its practices.
+`.github/workflows/ci.yml` replaces `ci/legacy.gitlab-ci.yml`: same stages, none of the legacy practices.
 
-**Every PR and every push to main** runs `test` (gofmt, `go vet`, `go test -race`), `sast` (Semgrep) and `chart` (`helm lint`, kubeconform). A failing job marks the PR red. Making them required merge checks needs a ruleset on main, plus a bypass for the bump commit.
-
-**On main**, `build` needs all three, so nothing is published past a failure:
-- `build`: build, Trivy-scan, push and cosign-sign the image.
-- `toolbox`: the same for the toolbox, only when `toolbox/` changed since the commit the published toolbox was built from.
-- `deploy-bump`: commit the new tags to Git. ArgoCD deploys from there, so CI never holds cluster credentials.
+PRs and pushes to main run `test` (gofmt, `go vet`, `go test -race`), `sast` (Semgrep) and `chart` (`helm lint`, kubeconform). On main, once all three pass, `build` scans, pushes and signs the image, `toolbox` does the same when `toolbox/` changed, and `deploy-bump` commits the new tags for ArgoCD to deploy.
 
 ## What changed and why
 
 | Legacy | Now | Why |
 |---|---|---|
-| AWS keys in `variables:` | Deleted. If AWS is needed: GitHub OIDC with `role-to-assume` | No job used them. OIDC (OpenID Connect) swaps a per-job token for short-lived credentials, so no key is stored. |
-| `sonar_check` with `allow_failure: true`, no `sonar.qualitygate.wait` | Semgrep `--error` (`p/golang`, `p/dockerfile`, `p/secrets`, `p/github-actions`) | The old gate could never fail. |
-| `npm test \|\| echo "tests flaky, continuing"` on `node:16` | `go vet`, `go test -race` | `\|\| echo` forces exit 0. Node 16 is end of life. |
-| `only: master` | Checks on `pull_request`, publishing on `push` to main | The old pipeline checked code after merge. |
-| dind, `docker login -p` | buildx, `docker/login-action` with `GITHUB_TOKEN` | dind (Docker-in-Docker) needs a privileged runner. `-p` leaks into the process list. |
-| `:latest` only | Full git SHA tag, amd64 plus arm64, signed by digest | `latest` is mutable: no audit, no rollback. |
-| `kubectl set image` with `$KUBECONFIG_CONTENT` | `deploy-bump` commits the tag, ArgoCD pulls it | No cluster credentials in CI. Rollback is `git revert`. |
-| `bitnami/kubectl:1.24` | Removed | The tag returns 404 and 1.24 is long unsupported. |
-| `when: manual` | Automatic bump | A reviewer-gated environment deadlocks a one-person repo. In production, `deploy-bump` would sit behind one. |
-| Floating versions | Actions pinned to commit SHAs, containers to `tag@digest`, Dependabot with a 7-day cooldown | Tags move. On 2026-03-19, 76 of 77 `aquasecurity/trivy-action` tags were force-pushed to credential-stealing code ([GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23)). Repos pinned to a commit after 2025-04-09 were not affected. Older SHA pins still pulled the hijacked `setup-trivy`. |
-| No image scan | Trivy gate: fixable HIGH or CRITICAL fails the job | Vulnerable images never reach the registry. The toolbox scan only reports. |
+| AWS keys in `variables:` | Removed (OIDC if AWS is ever needed) | Unused. OIDC stores no keys. |
+| `sonar_check` with `allow_failure: true` | Semgrep `--error` | The old gate could never fail. |
+| `npm test \|\| echo ...` on `node:16` | `go vet`, `go test -race` | `\|\| echo` forced exit 0. Node 16 is end of life. |
+| `only: master` | Checks on PRs, publish on main | Code was checked after merge. |
+| dind, `docker login -p` | buildx, `docker/login-action` with `GITHUB_TOKEN` | No privileged runner, no password in the process list. |
+| `:latest` only | Full git SHA tag, multi-arch, signed by digest | `latest` is mutable: no audit, no rollback. |
+| `kubectl set image` with `$KUBECONFIG_CONTENT` | `deploy-bump` commit, ArgoCD syncs | No cluster credentials in CI. Rollback is `git revert`. |
+| `bitnami/kubectl:1.24` | Removed | Tag returns 404; 1.24 is unsupported. |
+| `when: manual` | Automatic bump | A reviewer gate deadlocks a one-person repo. Production would add one. |
+| Floating versions | Actions pinned to SHAs, images to `tag@digest`, Dependabot with 7-day cooldown | Tags move. |
+| No image scan | Trivy fails on fixable HIGH or CRITICAL | Vulnerable images never reach the registry. |
 
-**Legacy file.** The copy in `ci/` has its AWS keys replaced by `<redacted>`. They were AWS documentation examples, but scanners match on shape.
+**Why SHA pins.** On 2026-03-19, 76 of 77 `aquasecurity/trivy-action` tags were force-pushed to credential-stealing code ([GHSA-69fq-xp46-6x23](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23)). Pins to a commit after 2025-04-09 were safe; older SHA pins still pulled the hijacked `setup-trivy`.
 
-**Triage.** The first scan flagged `math/rand` in `app/main.go`. It picks a quote, not a secret, so I suppressed that one rule on that import: `// nosemgrep: go.lang.security.audit.crypto.math_random.math-random-used -- picks a quote, not a secret`. An inline suppression with a reason is auditable in the diff. `allow_failure` hides everything.
-
-**deploy-bump.**
-- It sets the tag in `charts/quote-api/values.yaml`. When `toolbox` ran, the same commit points `docker-compose.yml` at `ghcr.io/<owner>/quote-toolbox:${TOOLBOX_TAG:-<sha>}`.
-- A push made with `GITHUB_TOKEN` starts no new run, so there is no loop.
-- Runs on main never cancel a run in progress. At most one waits and a newer push replaces it, so the newest tag lands last. `toolbox` diffs against the compose tag, so a replaced run can't skip a rebuild.
-- Under a ruleset, use a GitHub App token with bypass rights, or Argo CD Image Updater.
-
-**One-time step.** New GHCR packages are private. Make both public after the first push, then check `docker manifest inspect ghcr.io/quaghug/quote-api:<sha>` while logged out.
-
-**Checking a signature.**
+**Notes**
+- The legacy copy in `ci/` has its example AWS keys replaced by `<redacted>`, since scanners match on shape.
+- Semgrep's `math/rand` finding is suppressed inline with a reason (it picks a quote, not a secret). That is auditable; `allow_failure` hid everything.
+- A push with `GITHUB_TOKEN` starts no new run, so `deploy-bump` cannot loop. Under a branch ruleset it needs a GitHub App token with bypass rights.
+- New GHCR packages are documented as private by default, but both packages here are linked to this public repo and came out public (`gh api /users/QuagHug/packages/container/quote-api --jq .visibility` returns `public`).
 
 ```sh
 cosign verify ghcr.io/quaghug/quote-api@sha256:<digest> \
@@ -47,9 +36,8 @@ cosign verify ghcr.io/quaghug/quote-api@sha256:<digest> \
 
 ## Migrating GitLab CI variables and secrets
 
-1. **Inventory** project, group and instance variables via the API (`/projects/:id/variables`, `/groups/:id/variables`) with their protected, masked and scope flags. Grep CI files for hardcoded values.
-2. **Classify.** Config to `vars.*`. Shared secrets to repository secrets. Protected values to a `production` environment limited to `main` with required reviewers. Group values to organization secrets.
-3. **Delete instead of copying.** AWS keys become OIDC, `CI_REGISTRY_*` becomes `GITHUB_TOKEN`, `KUBECONFIG_CONTENT` becomes ArgoCD (revoke its token), `SONAR_TOKEN` goes.
-4. **Create the rest from stdin** (`gh secret set NAME --env production < file`) to keep them out of shell history.
-5. **Rotate everything that lived in GitLab** and revoke the old values. Masking only hides logs.
-6. **Enable secret scanning and push protection**, and keep `p/secrets` in CI.
+1. **Inventory** project, group and instance variables via the API, with their protected, masked and scope flags.
+2. **Delete what has a better replacement:** AWS keys to OIDC, `CI_REGISTRY_*` to `GITHUB_TOKEN`, `KUBECONFIG_CONTENT` to ArgoCD.
+3. **Map the rest:** config to `vars.*`, secrets to repository secrets, protected values to a `production` environment with required reviewers, group values to organization secrets. Set them from stdin (`gh secret set NAME --env production < file`).
+4. **Rotate** everything that lived in GitLab. Masking only hid logs.
+5. **Turn on** secret scanning and push protection.

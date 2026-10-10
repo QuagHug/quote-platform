@@ -1,13 +1,3 @@
-# One command, whole lab:  docker compose up -d
-#
-#   cluster  one-shot: creates (or restarts) a k3d cluster - 1 server + 4 agents,
-#            each node is a container - then labels/taints the nodes with
-#            troubleshoot/prepare.sh. `up -d` waits for it to finish.
-#   toolbox  long-running: kubectl, helm, terraform, k6, k3d. Every script in
-#            ./scripts re-runs itself in here, so nothing is needed on the host.
-#
-# k3d creates the node containers through the host Docker socket, so they live
-# next to (not inside) this compose project. `./scripts/down.sh` removes them.
 name: quote-platform
 
 x-toolbox: &toolbox
@@ -30,7 +20,6 @@ x-toolbox: &toolbox
 services:
   cluster:
     <<: *toolbox
-    # Pulls the published toolbox image, or builds it locally if the pull fails.
     build: ./toolbox
     command: ["sh", "/workspace/scripts/00-bootstrap.sh"]
     restart: "no"

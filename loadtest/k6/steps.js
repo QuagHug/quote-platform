@@ -1,5 +1,3 @@
-// Capacity probe: hold each request rate for 90s and compare latency per step.
-// Used to find the max sustainable rate reported in LOADTEST.md.
 import http from 'k6/http';
 import { check } from 'k6';
 
@@ -12,6 +10,7 @@ export const options = {
     startTime: `${i * 100}s`, preAllocatedVUs: 50, maxVUs: 300, tags: { step: String(rate) },
   }])),
   summaryTrendStats: ['med', 'p(95)', 'p(99)'],
+  // Never-failing thresholds, only so the summary prints each step's tagged metrics.
   thresholds: Object.fromEntries(STEPS.flatMap((r) => [
     [`http_req_duration{step:${r}}`, ['p(95)<100000']],
     [`dropped_iterations{step:${r}}`, ['count<100000']],

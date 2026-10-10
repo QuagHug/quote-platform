@@ -1,5 +1,3 @@
-// Baseline: a light, steady 2 req/s for 1 minute. Its p50/p95 set the
-// thresholds in quote.js and the alert in the Helm chart (see LOADTEST.md).
 import http from 'k6/http';
 import { check } from 'k6';
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-# Runs every task script in order. Each one is also safe to run on its own.
 . "$(dirname "$0")/_lib.sh"
 
 for s in 10-cluster-info 20-deploy 25-reclaim-drill 30-troubleshoot 50-validate-tf 60-loadtest; do

@@ -1,0 +1,47 @@
+
+==> Before: placement
+  quote-api-66cc9fc68-72c2m        k3d-quote-agent-2    on-demand  ready=true
+  quote-api-66cc9fc68-7fxr7        k3d-quote-agent-1    spot       ready=true
+  quote-api-66cc9fc68-942pn        k3d-quote-agent-0    spot       ready=true
+
+==> Starting curl loop against http://host.docker.internal:8080/api/quote (5 req/s)
+
+==> Simulating a spot reclaim: draining k3d-quote-agent-0
+node/k3d-quote-agent-0 cordoned
+Warning: ignoring DaemonSet-managed Pods: kube-system/svclb-traefik-4869a71e-4svnh
+evicting pod troubleshoot/web-56989c4fb6-q7jkq
+evicting pod monitoring/kps-grafana-5f8557b5d6-k4nz9
+evicting pod quote-api/quote-api-66cc9fc68-942pn
+evicting pod argocd/argocd-application-controller-0
+  [watch] NAME STATUS NODE
+  [watch] quote-api-66cc9fc68-942pn Running k3d-quote-agent-0
+  [watch] quote-api-66cc9fc68-942pn Terminating k3d-quote-agent-0
+  [watch] quote-api-66cc9fc68-942pn Terminating k3d-quote-agent-0
+  [watch] quote-api-66cc9fc68-vhzbv Pending <none>
+  [watch] quote-api-66cc9fc68-vhzbv Pending k3d-quote-agent-1
+  [watch] quote-api-66cc9fc68-vhzbv ContainerCreating k3d-quote-agent-1
+  [watch] quote-api-66cc9fc68-vhzbv ContainerCreating k3d-quote-agent-1
+  [watch] quote-api-66cc9fc68-vhzbv Running k3d-quote-agent-1
+  [watch] quote-api-66cc9fc68-vhzbv Running k3d-quote-agent-1
+pod/argocd-application-controller-0 evicted
+pod/kps-grafana-5f8557b5d6-k4nz9 evicted
+pod/web-56989c4fb6-q7jkq evicted
+  [watch] quote-api-66cc9fc68-942pn Completed k3d-quote-agent-0
+  [watch] quote-api-66cc9fc68-942pn Completed k3d-quote-agent-0
+  [watch] quote-api-66cc9fc68-942pn Completed k3d-quote-agent-0
+pod/quote-api-66cc9fc68-942pn evicted
+node/k3d-quote-agent-0 drained
+deployment "quote-api" successfully rolled out
+
+==> During reclaim: placement with k3d-quote-agent-0 cordoned
+  quote-api-66cc9fc68-72c2m        k3d-quote-agent-2    on-demand  ready=true
+  quote-api-66cc9fc68-7fxr7        k3d-quote-agent-1    spot       ready=true
+  quote-api-66cc9fc68-vhzbv        k3d-quote-agent-1    spot       ready=true
+
+==> Uncordoning k3d-quote-agent-0 (pods stay where they are; the scheduler does not rebalance)
+node/k3d-quote-agent-0 uncordoned
+
+==> Result: 35/35 requests answered 200 during the drill (0 failed)
+  replicas on on-demand: 1
+
+==> PASS: service kept answering through the reclaim

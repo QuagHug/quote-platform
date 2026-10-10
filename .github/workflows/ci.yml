@@ -98,10 +98,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      # The baseline is the commit the published toolbox was built from (the
-      # default tag in docker-compose.yml), not the previous push. A run that
-      # was replaced while queued, or a toolbox job that failed, then still
-      # leads to a rebuild on the next push.
       - id: diff
         run: |
           built="$(sed -nE 's#.*/quote-toolbox:\$\{TOOLBOX_TAG:-([0-9a-f]{40})\}.*#\1#p' docker-compose.yml)"
@@ -265,15 +261,8 @@ jobs:
         with:
           ref: main
           persist-credentials: true
-      # This job pushes to main with GITHUB_TOKEN. GitHub does not start new
-      # workflow runs for events created by GITHUB_TOKEN, so the bump commit
-      # cannot re-trigger this workflow and there is no loop. That is why the
-      # commit message carries no skip marker. ArgoCD sees the new commit on
-      # main and rolls the Deployment to the new image.
-      # yq finds the line and checks the result; sed edits only that line,
-      # because "yq -i" would also strip every blank line in values.yaml.
-      # When the toolbox was rebuilt, the same commit points docker-compose.yml
-      # at it, so "docker compose up" pulls the published toolbox.
+      # Pushes made with GITHUB_TOKEN do not start workflow runs, so this commit cannot loop.
+      # sed edits the line yq finds because "yq -i" would strip the blank lines in values.yaml.
       - name: Commit the new tags to main
         env:
           IMAGE: ${{ needs.build.outputs.image }}
