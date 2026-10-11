@@ -43,7 +43,7 @@ HPA_PID=$!
 PLACE_PID=$!
 trap 'kill $HPA_PID $PLACE_PID 2>/dev/null || true' EXIT
 
-log "Running k6 against http://host.docker.internal:${INGRESS_PORT}/api/quote (about 9 minutes)"
+log "Running k6 against http://host.docker.internal:${INGRESS_PORT}/api/quote"
 set +e
 k6 run --quiet --summary-export "$OUT/k6-summary.json" \
   -e BASE_URL="http://host.docker.internal:${INGRESS_PORT}" -e PEAK_RPS="${PEAK_RPS:-10}" \

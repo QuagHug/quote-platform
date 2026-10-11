@@ -9,8 +9,8 @@ Go quote API on a local 5-node k3d cluster with simulated spot, on-demand and GP
 
 ```bash
 git clone https://github.com/QuagHug/quote-platform && cd quote-platform
-docker compose up -d       # cluster + nodepools + toolbox (~2 min)
-./scripts/run-all.sh       # all tasks (~15-20 min)
+docker compose up -d       # cluster + nodepools + toolbox
+./scripts/run-all.sh       # all tasks
 curl http://localhost:8080/api/quote
 ```
 
