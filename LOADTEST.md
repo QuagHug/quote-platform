@@ -1,16 +1,14 @@
 # Load test (Part 6)
 
-`./scripts/60-loadtest.sh` installs Prometheus + Grafana and runs k6 against `/api/quote` through the Ingress (k3d load balancer, then Traefik). Evidence: [`docs/evidence/`](docs/evidence).
+`./scripts/60-loadtest.sh`: Prometheus + Grafana, then k6 on `/api/quote` through the Ingress. Evidence: [`docs/evidence/`](docs/evidence).
 
-Machine: Apple M1, Docker VM with 8 vCPUs and 10 GB, shared by all 5 k3d nodes.
+Machine: Apple M1, Docker VM with 8 vCPU / 10 GB shared by all 5 nodes.
 
-## Baseline
+## Baseline and capacity
 
-A steady 2 req/s (`loadtest/k6/baseline.js`) gives median 122 ms and p95 348 ms. Each request costs 101 ms of CPU on a fast core and 150-320 ms on the M1's efficiency cores, which the VM also uses. That is why p95 is wide even when the machine is idle.
+Each request costs ~101 ms CPU on a fast core, 150-320 ms on the M1's efficiency cores. Baseline at 2 req/s: p50 122 ms, p95 348 ms.
 
-## Capacity
-
-A step test (`loadtest/k6/steps.js`) held each rate for 90 s:
+Step test ([`steps.js`](loadtest/k6/steps.js), 90 s per step):
 
 | req/s | p50 | p95 |
 |---|---|---|
@@ -19,27 +17,23 @@ A step test (`loadtest/k6/steps.js`) held each rate for 90 s:
 | 25 | 193 ms | 3.1 s |
 | 30 | 653 ms | 12.7 s |
 
-**Max sustainable: about 15 req/s.** With 10 replicas, a steady 15 req/s held p95 at 0.2-0.5 s, but any burst of host load (pods starting, another app) pushed p95 to several seconds. 10 req/s is the comfortable rate, and that is what the test uses.
+**Max sustainable: ~15 req/s.** The test runs at 10 for headroom.
 
 ## Bottleneck
 
-**Host CPU.** At 20 req/s the 10 replicas used about 0.5 cores each, and the app nodes together used about 7.6 of 8 vCPUs. Traefik used 50m. CPU throttling stayed under 5%. Every k3d node reports the whole VM's 8 CPUs, so the scheduler sees 40 CPUs and the HPA keeps adding pods with no real CPU behind them.
+Host CPU. At 20 req/s, 10 pods used ~0.5 core each and the nodes ~7.6 of 8 vCPU; Traefik used 50m; throttling stayed under 5%. Every k3d node claims all 8 CPUs, so the scheduler sees 40 and keeps adding pods with no real CPU behind them.
 
-## Result (10 req/s)
+## Result at 10 req/s
 
-- The HPA went 3 to 10 replicas. At 10 replicas the split was 6 spot / 4 on-demand, and on-demand never had 0 ready replicas (`placement.txt`).
-- Hold phase: p95 255 ms, p99 791 ms. 0 of 4,199 requests failed.
-- Screenshot: `docs/evidence/grafana-during-load.png`.
+- HPA 3 → 10. At 10 replicas: 6 spot / 4 on-demand. On-demand never 0.
+- Hold phase: p95 255 ms, p99 791 ms, 0 of 4,199 failed.
+- Screenshot: [`grafana-during-load.png`](docs/evidence/grafana-during-load.png).
 
-## Thresholds
+## Thresholds and alert
 
-- `http_req_failed < 1%` over the whole run.
-- **Hold phase only:** `p95 < 1 s`, `p99 < 2.5 s`. That is about 3 times the baseline p95, so efficiency-core noise passes but queueing fails. The ramp phase isn't latency-gated, because it measures how fast the HPA reacts.
+- k6: errors < 1%; hold-phase p95 < 1 s and p99 < 2.5 s (~3× baseline p95). The ramp isn't latency-gated; it measures HPA reaction.
+- Alert `QuoteApiLatencyHigh`: p95 > 1 s for 3 min while traffic > 0.5 req/s. Short spikes pass; sustained saturation fires. It fired in the 20 req/s run ([`run-20rps/`](docs/evidence/run-20rps)), which failed k6 at p95 3.5 s; that script version wrongly printed PASS (fixed).
 
-## Alert
+## Scale first in production
 
-`QuoteApiLatencyHigh`: p95 > 1 s for 3 minutes, while traffic is above 0.5 req/s. That is the same 3x-baseline line. Short spikes (pod starts, the ramp) are under 3 minutes, but sustained saturation isn't. It fired in the 20 req/s overload run (`docs/evidence/run-20rps/`). That run failed its k6 thresholds (p95 3.5 s), but the script version at the time hid k6's exit code behind `tee` and printed PASS. That bug is fixed.
-
-## What to scale first in production
-
-Node CPU, not replicas. Set the CPU request to the real cost (about 1 core per 10 req/s), so pods only fit where there is CPU and Karpenter adds nodes when they don't. Then lower the HPA target to about 50%, so capacity arrives before p95 climbs. The ingress has plenty of headroom.
+Node CPU, not replicas: set the CPU request to the real cost (~1 core per 10 req/s) so Karpenter adds nodes, then lower the HPA target to ~50%.
