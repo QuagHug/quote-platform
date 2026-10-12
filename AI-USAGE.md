@@ -17,33 +17,24 @@ I followed the practices current guidance recommends for AI in infra work:
 
 ## Prompts that helped
 
-1. **Diagnosis (Part 3)**
-   > Context: k3s cluster with a default-deny NetworkPolicy; node labels and taints set by `prepare.sh` must not change. Identify every independent defect in `broken-app.yaml` that prevents `verify.sh` from passing. For each, give the symptom, the `kubectl` command that confirms it, the root cause, and the minimal fix. Cite evidence and flag anything you could not verify.
-
-2. **Adversarial review**
-   > Act as a critical reviewer of the findings below. Try to disprove them: incorrect scheduling or networking semantics, deprecated or non-existent API versions, and fixes that would still fail verification. Report only refutations backed by source code, official documentation, or command output.
-
-3. **Version check before writing IaC (Part 5)**
-   > Before writing any manifests, confirm the current stable Karpenter API (NodePool, EC2NodeClass) and the Cloudflare Terraform provider's resource names against the latest official releases. Do not rely on prior knowledge; cite the release or documentation used.
-
-4. **Propose options, then decide**
+1. **Propose options, then decide**
    > Propose two or three ways to build the compose harness, such as k3d via the Docker socket or k3s as compose services. For each, list the trade-offs for setup, teardown, portability and security, and recommend one. Do not implement until I choose.
 
-5. **Read-only investigation**
+2. **Read-only investigation**
    > Investigate only: read files and documentation and run read-only commands. Do not create, apply, push or write anything. Return findings with evidence.
 
-6. **Stop before outward actions**
+3. **Stop before outward actions**
    > Before any action that publishes, deletes or changes shared state, such as creating the repo, pushing, or changing Docker settings, stop and list what it touches, what it does not touch, and how to undo it.
 
-7. **Thresholds from measurements**
+4. **Thresholds from measurements**
    > Measure a baseline at low load, then step the request rate up. Derive the k6 thresholds and the alert threshold from the measured p95 and p99, not generic numbers, and identify the bottleneck with evidence: CPU, throttling or ingress.
 
-8. **Supply-chain review of CI**
+5. **Supply-chain review of CI**
    > Review this GitHub Actions workflow for supply-chain risk: actions not pinned to a commit SHA, token permissions broader than each job needs, secrets that could reach logs, and untrusted input used in run steps. Propose fixes ranked by risk.
 
 ## Where the AI was wrong
 
-1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. The adversarial review (prompt 2) showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
+1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. An adversarial review showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
 2. **Load test:** assumed 40 req/s was fine. It overloaded; a step test found the real limit (~15) and the thresholds now come from it.
 
 Also caught in review: Part 7 over the page limit, a wrong claim about what Karpenter's `do-not-disrupt` blocks (see [iac/README.md](iac/README.md)), and a Terraform `import` without a matching resource.
