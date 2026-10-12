@@ -14,7 +14,6 @@ I followed the practices current guidance recommends for AI in infra work:
 | **Least privilege for the agent** ([Google SRE](https://sre.google/resources/practices-and-processes/ai-engineering-reliable-operations/)) | It worked on a throwaway local cluster and this repo only. No cloud or production credentials existed. Research agents were read-only. |
 | **Human approves anything that mutates or goes outside** ([Google Cloud](https://cloud.google.com/blog/topics/developers-practitioners/how-google-sres-use-gemini-cli-to-solve-real-world-outages)) | I approved the GitHub account, making the repo public, and running the drill and load tests before they happened. |
 | **Verify against reality, not the model's memory** ([OWASP LLM09](https://genai.owasp.org/llmrisk/llm092025-misinformation/)) | Versions and APIs were checked against live sources (Karpenter v1.15.0 CRDs, Cloudflare provider v5, image tags in the registries). Every claim was run on the cluster. A second agent tried to refute the findings. |
-| **Keep AI work attributable** ([NCSC](https://www.ncsc.gov.uk/blogs/managing-the-cyber-risk-of-agentic-ai)) | AI-assisted commits carry a `Co-Authored-By: Claude` trailer. Test output is saved in `docs/evidence/`. |
 
 ## Prompts that helped
 
