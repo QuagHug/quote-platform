@@ -26,6 +26,21 @@ I followed the practices current guidance recommends for AI in infra work:
 3. **Version check before writing IaC (Part 5)**
    > Before writing any manifests, confirm the current stable Karpenter API (NodePool, EC2NodeClass) and the Cloudflare Terraform provider's resource names against the latest official releases. Do not rely on prior knowledge; cite the release or documentation used.
 
+4. **Propose options, then decide**
+   > Propose two or three ways to build the compose harness, such as k3d via the Docker socket or k3s as compose services. For each, list the trade-offs for setup, teardown, portability and security, and recommend one. Do not implement until I choose.
+
+5. **Read-only investigation**
+   > Investigate only: read files and documentation and run read-only commands. Do not create, apply, push or write anything. Return findings with evidence.
+
+6. **Stop before outward actions**
+   > Before any action that publishes, deletes or changes shared state, such as creating the repo, pushing, or changing Docker settings, stop and list what it touches, what it does not touch, and how to undo it.
+
+7. **Thresholds from measurements**
+   > Measure a baseline at low load, then step the request rate up. Derive the k6 thresholds and the alert threshold from the measured p95 and p99, not generic numbers, and identify the bottleneck with evidence: CPU, throttling or ingress.
+
+8. **Supply-chain review of CI**
+   > Review this GitHub Actions workflow for supply-chain risk: actions not pinned to a commit SHA, token permissions broader than each job needs, secrets that could reach logs, and untrusted input used in run steps. Propose fixes ranked by risk.
+
 ## Where the AI was wrong
 
 1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. The adversarial review (prompt 2) showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
