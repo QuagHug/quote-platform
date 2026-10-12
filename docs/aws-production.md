@@ -31,7 +31,7 @@ flowchart TB
     end
     rds[("RDS PostgreSQL<br/>Multi-AZ")]
     redis[("ElastiCache Redis<br/>optional")]
-    ecr["ECR: quote-api:<git sha>"]
+    ecr["ECR: quote-api:git-sha"]
     sqs["SQS interruption queue<br/>EventBridge spot warnings"]
     sm["Secrets Manager"]
     subgraph obs["observability"]

@@ -45,4 +45,4 @@ echo "  From your machine: curl http://localhost:${INGRESS_PORT}/api/quote"
 
 log "Argo CD UI on http://localhost:${ARGOCD_PORT} (anonymous, read-only)"
 pkill -f 'port-forward.*argocd-server' 2>/dev/null || true
-nohup kubectl -n argocd port-forward --address 0.0.0.0 svc/argocd-server 8081:80 >/tmp/pf-argocd.log 2>&1 &
+nohup sh -c 'while :; do kubectl -n argocd port-forward --address 0.0.0.0 svc/argocd-server 8081:80; sleep 2; done' >/tmp/pf-argocd.log 2>&1 &

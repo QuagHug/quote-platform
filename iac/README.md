@@ -5,7 +5,7 @@
 ## 5a Karpenter (`karpenter.sh/v1`, v1.15.0)
 
 - `gpu-spot` (weight 100) and `gpu-on-demand` (weight 10) share EC2NodeClass `gpu`: spot first, on-demand fallback.
-- NVIDIA g5/g6/g6e, ≤4 GPUs, taint `nvidia.com/gpu:NoSchedule`, pinned AL2023 AMI. Limits: 16 GPUs spot, 8 on-demand.
+- NVIDIA g5/g6/g6e, up to 4 GPUs, taint `nvidia.com/gpu:NoSchedule`, pinned AL2023 AMI. Limits: 16 GPUs spot, 8 on-demand.
 - `WhenEmpty` consolidation: a serving node is never consolidated. Cost: a busy on-demand fallback isn't swapped back to spot.
 - Budgets: one node at a time; no drift (node replacement after AMI or config changes) weekdays 08:00-18:00 UTC.
 - `do-not-disrupt` pods block consolidation; drift still proceeds because the pools set `terminationGracePeriod: 1h`.

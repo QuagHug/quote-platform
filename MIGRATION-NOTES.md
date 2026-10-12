@@ -1,4 +1,4 @@
-# Migration notes: GitLab CI → GitHub Actions (Part 4)
+# Migration notes: GitLab CI to GitHub Actions (Part 4)
 
 [`ci.yml`](.github/workflows/ci.yml) replaces [`ci/legacy.gitlab-ci.yml`](ci/legacy.gitlab-ci.yml).
 
@@ -30,6 +30,6 @@
 
 1. Inventory project, group and instance variables with their flags (protected, masked, environment scope).
 2. Delete what's replaced: AWS keys (OIDC), registry creds (`GITHUB_TOKEN`), kubeconfig (Argo CD).
-3. Map the rest: config → `vars`, secrets → repo secrets, protected → `production` environment secrets.
+3. Map the rest: config to `vars`, secrets to repo secrets, protected values to `production` environment secrets.
 4. Rotate everything that lived in GitLab.
 5. Enable secret scanning and push protection.

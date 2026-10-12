@@ -30,8 +30,8 @@ services:
     command: ["sleep", "infinity"]
     init: true
     ports:
-      - "${GRAFANA_PORT:-3000}:3000"
-      - "${ARGOCD_PORT:-8081}:8081"
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+      - "127.0.0.1:${ARGOCD_PORT:-8081}:8081"
     depends_on:
       cluster:
         condition: service_completed_successfully

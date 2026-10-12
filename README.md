@@ -63,7 +63,7 @@ flowchart LR
 ```
 
 - `docker compose up -d` creates the k3d cluster through the Docker socket, runs the provided `prepare.sh`, then starts the toolbox.
-- Requests: `localhost:8080` → k3d load balancer → Traefik → Service → pod.
+- Requests: `localhost:8080`, then the k3d load balancer, Traefik, the Service, and a pod.
 - Delivery: CI pushes the image and commits its SHA to `values.yaml`; Argo CD pulls. CI never touches the cluster.
 - AWS version: [docs/aws-production.md](docs/aws-production.md).
 
@@ -76,10 +76,10 @@ Scripts 00-60 run inside the toolbox and are safe to re-run. `run-all.sh` runs 1
 | `00-bootstrap.sh` | Create cluster, run `prepare.sh`, pin Traefik to the server node (run by compose) |
 | `10-cluster-info.sh` | Show nodes, pool labels, taints |
 | `20-deploy.sh` | Install Argo CD, deploy the app, curl via Ingress |
-| `25-reclaim-drill.sh` | Drain a spot node under a curl loop, show pods reschedule, uncordon; fails on >1% errors or no on-demand replica |
+| `25-reclaim-drill.sh` | After 20: drain a spot node under a curl loop, show pods reschedule, uncordon; fails on >1% errors or no on-demand replica |
 | `30-troubleshoot.sh` | Apply `fixed-app.yaml`, run `verify.sh` |
 | `50-validate-tf.sh` | Terraform + kubeconform validation |
-| `60-loadtest.sh` | Prometheus/Grafana, k6, HPA + placement evidence |
+| `60-loadtest.sh` | After 20: Prometheus/Grafana, k6, HPA + placement evidence |
 | `run-all.sh` / `down.sh` | Run scripts 10 to 60 in order / tear everything down |
 
 ## Parts
@@ -122,6 +122,6 @@ Scripts 00-60 run inside the toolbox and are safe to re-run. `run-all.sh` runs 1
 ## Troubleshooting
 
 - **Port busy:** run `./scripts/down.sh`, then `INGRESS_PORT=18080 docker compose up -d` (also `API_PORT`, `GRAFANA_PORT`, `ARGOCD_PORT`).
-- **OOM or slow load test:** give Docker ~10 GB. Each k3d node reports the whole VM, so the scheduler can't see the shortage.
+- **OOM or slow load test:** give Docker ~10 GB. Each k3d node reports the whole VM, so the scheduler can't see the shortage. Latency depends on the host's CPU, so a latency-only k6 miss prints WARN; errors, scale-out and placement still fail the script.
 - **Arch:** all images are multi-arch (amd64 + arm64). On Apple Silicon, efficiency cores widen latency (see [LOADTEST.md](LOADTEST.md)).
 - **Linux:** the toolbox reaches the cluster via `host-gateway`; allow the Docker bridge through the host firewall.
