@@ -17,14 +17,18 @@ I followed the practices current guidance recommends for AI in infra work:
 
 ## Prompts that helped
 
-1. "List every defect in broken-app.yaml that blocks verify.sh: symptom, diagnose command, cause, fix. Cite evidence; mark what you couldn't verify."
-2. "You are a skeptic. Refute these findings: wrong Kubernetes semantics, outdated APIs, fixes that would still fail. Only with evidence."
-3. "Verify the current Karpenter API and Cloudflare provider resources against the latest releases, not memory."
+1. **Diagnosis (Part 3)**
+   > Context: k3s cluster with a default-deny NetworkPolicy; node labels and taints set by `prepare.sh` must not change. Identify every independent defect in `broken-app.yaml` that prevents `verify.sh` from passing. For each, give the symptom, the `kubectl` command that confirms it, the root cause, and the minimal fix. Cite evidence and flag anything you could not verify.
+
+2. **Adversarial review**
+   > Act as a critical reviewer of the findings below. Try to disprove them: incorrect scheduling or networking semantics, deprecated or non-existent API versions, and fixes that would still fail verification. Report only refutations backed by source code, official documentation, or command output.
+
+3. **Version check before writing IaC (Part 5)**
+   > Before writing any manifests, confirm the current stable Karpenter API (NodePool, EC2NodeClass) and the Cloudflare Terraform provider's resource names against the latest official releases. Do not rely on prior knowledge; cite the release or documentation used.
 
 ## Where the AI was wrong
 
-1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. The skeptic showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
-2. **Part 3 DNS:** predicted "Could not resolve host". Live, DNS resolved and `verify.sh` passed without the DNS egress rule. A test pod showed the policy lands seconds late. Kept the rule.
-3. **Load test:** assumed 40 req/s was fine. It overloaded; a step test found the real limit (~15) and the thresholds now come from it.
+1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. The adversarial review (prompt 2) showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
+2. **Load test:** assumed 40 req/s was fine. It overloaded; a step test found the real limit (~15) and the thresholds now come from it.
 
 Also caught in review: Part 7 over the page limit, a wrong claim about what Karpenter's `do-not-disrupt` blocks (see [iac/README.md](iac/README.md)), and a Terraform `import` without a matching resource.
