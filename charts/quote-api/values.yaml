@@ -1,6 +1,6 @@
 image:
   repository: "ghcr.io/quaghug/quote-api"
-  tag: "9da41931e9157b770ae6d73e6c05b937056de9d8"
+  tag: "6c3b0c78ccc26a6d05911d4003cfda3de7fbad61"
   pullPolicy: IfNotPresent
 
 # Ignored while autoscaling is enabled; the chart then omits spec.replicas.
