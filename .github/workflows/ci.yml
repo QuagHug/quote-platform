@@ -101,7 +101,7 @@ jobs:
       - id: diff
         run: |
           built="$(sed -nE 's#.*/quote-toolbox:\$\{TOOLBOX_TAG:-([0-9a-f]{40})\}.*#\1#p' docker-compose.yml)"
-          if [ -z "$built" ] || ! git cat-file -e "${built}^{commit}" 2>/dev/null; then
+          if [ -z "$built" ] || ! git merge-base --is-ancestor "$built" "$GITHUB_SHA" 2>/dev/null; then
             changed=true
           elif git diff --quiet "$built" "$GITHUB_SHA" -- toolbox/; then
             changed=false
