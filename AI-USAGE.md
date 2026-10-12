@@ -1,12 +1,20 @@
 # AI usage
 
-**Tool:** Claude Code (Claude Opus 5.5) for all parts.
+**Tool:** Claude Code (Claude Opus 5.5 / Fable 5.1) for all parts: research, code, docs, and running the checks.
 
-## Method
+## How I used it
 
-1. **Research first:** current versions and APIs with sources, not memory.
-2. **Adversarial review:** a second agent, prompted to refute rather than agree, tried to disprove each finding and re-ran the validators.
-3. **Run everything:** tests, Semgrep, helm lint, kubeconform, actionlint, terraform, the live cluster, `verify.sh`, the drill, the load test, CI.
+I followed the practices current guidance recommends for AI in infra work:
+
+| Recommended practice | What I did here |
+|---|---|
+| **AI drafts, a human decides and owns** ([GitHub](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/risks-and-mitigations)) | I made the calls: k3d, Go, all three tracks, the placement trade-offs. I can walk through every file. |
+| **Deterministic checks are the gate** ([Thoughtworks](https://www.thoughtworks.com/en-us/radar/techniques/feedback-sensors-for-coding-agents)) | Nothing counted as done until it passed: `go test -race`, Semgrep, helm lint, kubeconform, actionlint, terraform validate, Trivy, `verify.sh`, the drill and load-test scripts. CI runs the same gates. |
+| **Small changes in version control, rollback ready** ([DORA](https://cloud.google.com/blog/products/ai-machine-learning/introducing-doras-inaugural-ai-capabilities-model)) | Everything is in git. Deploys are a git commit, so rollback is `git revert`. |
+| **Least privilege for the agent** ([Google SRE](https://sre.google/resources/practices-and-processes/ai-engineering-reliable-operations/)) | It worked on a throwaway local cluster and this repo only. No cloud or production credentials existed. Research agents were read-only. |
+| **Human approves anything that mutates or goes outside** ([Google Cloud](https://cloud.google.com/blog/topics/developers-practitioners/how-google-sres-use-gemini-cli-to-solve-real-world-outages)) | I approved the GitHub account, making the repo public, and running the drill and load tests before they happened. |
+| **Verify against reality, not the model's memory** ([OWASP LLM09](https://genai.owasp.org/llmrisk/llm092025-misinformation/)) | Versions and APIs were checked against live sources (Karpenter v1.15.0 CRDs, Cloudflare provider v5, image tags in the registries). Every claim was run on the cluster. A second agent tried to refute the findings. |
+| **Keep AI work attributable** ([NCSC](https://www.ncsc.gov.uk/blogs/managing-the-cyber-risk-of-agentic-ai)) | AI-assisted commits carry a `Co-Authored-By: Claude` trailer. Test output is saved in `docs/evidence/`. |
 
 ## Prompts that helped
 
