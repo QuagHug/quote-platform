@@ -2,13 +2,13 @@
 
 ## 1. EKS 1.33 to 1.35, zero downtime
 
-Two one-minor hops, each rehearsed on staging. 1.33 is on paid extended support; 1.34 leaves standard support on 2026-12-02.
+Two one-minor hops, each rehearsed on staging.
 
-1. **Pre-checks:** `aws eks list-insights`, `pluto`/`kubent` on rendered manifests, nodes on the current minor and off AL2 (no EKS AL2 AMIs after 1.32).
+1. **Pre-checks:** `aws eks list-insights`, `pluto`/`kubent` (deprecated-API scanners) on rendered manifests, nodes on the current minor and off AL2 (no EKS AL2 AMIs after 1.32).
 2. **Control plane:** `aws eks update-cluster-version --name prod --kubernetes-version 1.34` (7-day rollback window).
 3. **Add-ons:** vpc-cni, coredns, EBS/EFS CSI, at versions from `aws eks describe-addon-versions`.
-4. **Nodes:** managed node groups surge and drain within PodDisruptionBudgets (PDBs); Karpenter drifts nodes to the new AMI.
-5. **kube-proxy last**, per the skew policy.
+4. **Nodes:** managed node groups surge and drain within PodDisruptionBudgets (PDBs); Karpenter drift replaces nodes with the new AMI.
+5. **kube-proxy last**, per the Kubernetes version skew policy.
 
 Top risks:
 
@@ -19,10 +19,10 @@ Top risks:
 ## 2. Spot reclaim alert storms
 
 1. **Make reclaims a non-event:** Karpenter's interruption queue gets the 2-minute warning and drains and deletes the node before it goes unreachable.
-2. **Fix the stock alert:** `KubeNodeUnreachable` ignores the termination handler's `spot-itn` taint but not `karpenter.sh/disrupted`. Disable it in kube-prometheus-stack `defaultRules.disabled` and ship a copy that ignores both.
+2. **Fix the stock alert:** the stock `KubeNodeUnreachable` already excludes nodes tainted `spot-itn` (aws-node-termination-handler) but not `karpenter.sh/disrupted`. Disable it in kube-prometheus-stack `defaultRules.disabled` and ship a copy that ignores both.
 3. **Split by capacity type:** add `karpenter.sh/capacity-type` to kube-state-metrics `--metric-labels-allowlist`. On-demand node down pages; one spot node down is a ticket.
 4. **Page on real loss:** SLO burn rate, pods unschedulable for 10 minutes, `KubeDeploymentReplicasMismatch`, or over 20% of nodes (or a whole AZ) unreachable.
-5. **Inhibit:** `NodeDisrupting` mutes `KubeNode.*` for the same `cluster` and `node`, routed to a null receiver.
+5. **Inhibit:** `NodeDisrupting` (routed to a null receiver, never paged) inhibits `KubeNode.*` for the same `cluster` and `node`.
 
 ```yaml
 - alert: NodeDisrupting
@@ -46,14 +46,14 @@ Top risks:
 
 ## 4. Secrets on EKS
 
-| | ESO | Secrets Store CSI Driver |
+| | ESO (External Secrets Operator) | Secrets Store CSI Driver |
 |---|---|---|
 | Delivery | Syncs into a native Secret | Mounts files at pod start |
 | Copy in etcd | Yes | No, unless synced |
-| Rotation | `refreshInterval`, plus Reloader | App must re-read the file |
+| Rotation | `refreshInterval`, plus Reloader to restart pods | App must re-read the file |
 | AWS outage | Existing Secret keeps working | New pods stuck in `ContainerCreating` |
 
-**Pick External Secrets Operator (ESO) with Secrets Manager.**
+**Pick ESO with Secrets Manager.**
 
 1. **Same on every cluster:** ArgoCD syncs `ExternalSecret` manifests: references, never values.
 2. **Simple for apps:** plain Secrets, no CSI volume; pods still start during a short AWS outage.

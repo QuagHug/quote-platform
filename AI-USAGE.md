@@ -1,11 +1,11 @@
 # AI usage
 
-**Tool:** Claude Code (Claude Opus 5.5) for all parts, plus separate review agents prompted to refute rather than agree.
+**Tool:** Claude Code (Claude Opus 5.5) for all parts.
 
 ## Method
 
 1. **Research first:** current versions and APIs with sources, not memory.
-2. **Adversarial review:** a second agent tried to disprove each finding and re-ran the validators.
+2. **Adversarial review:** a second agent, prompted to refute rather than agree, tried to disprove each finding and re-ran the validators.
 3. **Run everything:** tests, Semgrep, helm lint, kubeconform, actionlint, terraform, the live cluster, `verify.sh`, the drill, the load test, CI.
 
 ## Prompts that helped
@@ -16,8 +16,8 @@
 
 ## Where the AI was wrong
 
-1. **Placement:** claimed ReplicaSet deletion order keeps an on-demand replica. The skeptic showed the opposite from source. Fix: HPA scale-down 1 pod/min.
-2. **Part 3 DNS:** predicted "Could not resolve host". Live, DNS resolved and `verify.sh` passed without the rule. A probe pod showed the policy lands seconds late. Kept the rule.
+1. **Placement:** claimed ReplicaSet scale-down spares the on-demand replica. The skeptic showed from the controller source that it deletes from the busiest node, the on-demand one, first. Fix: HPA scale-down 1 pod/min.
+2. **Part 3 DNS:** predicted "Could not resolve host". Live, DNS resolved and `verify.sh` passed without the DNS egress rule. A test pod showed the policy lands seconds late. Kept the rule.
 3. **Load test:** assumed 40 req/s was fine. It overloaded; a step test found the real limit (~15) and the thresholds now come from it.
 
-Also caught in review: Part 7 over the page limit, a wrong `do-not-disrupt` claim, and a Terraform `import` without a matching resource.
+Also caught in review: Part 7 over the page limit, a wrong claim about what Karpenter's `do-not-disrupt` blocks (see [iac/README.md](iac/README.md)), and a Terraform `import` without a matching resource.
