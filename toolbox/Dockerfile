@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM hashicorp/terraform:1.16.5 AS terraform
-FROM grafana/k6:2.3.0 AS k6
+FROM grafana/k6:2.4.0 AS k6
 
 FROM alpine/k8s:1.36.5
 ARG TARGETARCH
